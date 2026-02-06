@@ -27,7 +27,7 @@
 
         .container {
             background: rgba(255, 255, 255, 0.95);
-            width: 95%;
+            width: 90%;
             max-width: 1000px;
             border-radius: 12px;
             padding: 40px;
@@ -58,10 +58,11 @@
         .btn-group { display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 20px 0; }
         .main-btns { display: flex; justify-content: center; gap: 20px; }
         
-        .btn { padding: 10px 25px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 16px; border: none; display: inline-flex; align-items: center; }
+        .btn { padding: 10px 25px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 14px; border: none; display: inline-flex; align-items: center; }
         .btn-blue { background-color: var(--primary-blue); color: white; }
         .btn-outline { background-color: white; color: var(--primary-blue); border: 1px solid var(--primary-blue); }
         
+        /* 重试按钮样式 */
         .retry-btn { font-size: 14px; color: #ff5722; text-decoration: underline; cursor: pointer; background: none; border: none; }
 
         /* 底部说明按钮 */
@@ -87,13 +88,14 @@
 
         .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
         .modal-content-box { border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; font-size: 14px; line-height: 2.2; margin-bottom: 20px; }
-        .modal-row { border-bottom: 1px solid #f5f5f5; word-break: break-all; }
+        .modal-row { border-bottom: 1px solid #f5f5f5; }
         .modal-row:last-child { border-bottom: none; }
         
         .btn-back { display: block; width: 100px; margin: 0 auto; border: 1px solid var(--primary-blue); color: var(--primary-blue); background: white; padding: 8px; border-radius: 6px; text-align: center; cursor: pointer; }
 
+        /* 工具类 */
         .hidden { display: none !important; }
-        #tips { color: #f44336; margin-bottom: 10px; min-height: 1.2em; text-align: center; }
+        #tips { color: #f44336; margin-bottom: 10px; min-height: 1.2em; }
     </style>
 </head>
 <body>
@@ -129,7 +131,7 @@
     </div>
 
     <div class="footer-tips">
-        <p>如果没有自动跳转，请点击上面的按钮，为了隐藏号码，改为发送邮箱形式。</p>
+        <p>如果没有自动跳转，请点击上面的按钮。</p>
         <div class="manual-btns">
             <button id="showManualCall" class="btn-mini">手动拨号说明</button>
             <button id="showManualSms" class="btn-mini">手动短信说明</button>
@@ -139,8 +141,8 @@
     <div id="manualCall" class="modal hidden">
         <div class="modal-title">手动拨号说明</div>
         <div class="modal-content-box">
-            <div class="modal-row">1) 记录车主隐私联系方式：<strong id="manualCallEmail"></strong></div>
-            <div class="modal-row">2) 如需紧急通话，请点击上方蓝色按钮由系统中转。</div>
+            <div class="modal-row">1) 在拨号界面手动输入号码：<strong id="manualCallNumber"></strong></div>
+            <div class="modal-row">2) 点击拨号，通话费用由运营商收取。</div>
         </div>
         <button id="backFromCall" class="btn-back">返回</button>
     </div>
@@ -148,8 +150,8 @@
     <div id="manualSms" class="modal hidden">
         <div class="modal-title">手动发送短信说明</div>
         <div class="modal-content-box">
-            <div class="modal-row">编辑内容：<strong id="manualSmsBody"></strong></div>
-            <div class="modal-row">发送邮箱：<strong id="manualSmsEmail"></strong></div>
+            <div class="modal-row">编辑短信：<strong id="manualSmsBody"></strong></div>
+            <div class="modal-row">发送至：<strong id="manualSmsNumber"></strong></div>
         </div>
         <button id="backFromSms" class="btn-back">返回</button>
     </div>
@@ -157,13 +159,12 @@
 
 <script>
 (function() {
-    // ===== 可配置项 =====
-    const REAL_PHONE = '19327401607'; // 实际拨号用的号码
-    const CUSTOM_EMAIL = 'xxx@qq.com';  // 用于显示的隐私邮箱
-    const PLATE = '鲁A00001';           // 车牌号
-    const SMS_BODY = '来......挪个车-';  // 短信内容
+    // ===== 可配置 [来自图片5] =====
+    const PHONE = '18888888888'; 
+    const PLATE = '鲁A00001'; 
+    const SMS_BODY = '来......挪个车-'; 
 
-    // ===== DOM 获取 =====
+    // ===== DOM 元素获取 [来自图片5-6] =====
     const plateEl = document.getElementById('plate');
     const tipsEl = document.getElementById('tips');
     const callBtn = document.getElementById('callBtn');
@@ -176,54 +177,72 @@
     const manualSmsBox = document.getElementById('manualSms');
     const backFromCall = document.getElementById('backFromCall');
     const backFromSms = document.getElementById('backFromSms');
-    
-    // 隐私邮箱显示位置
-    const manualCallEmail = document.getElementById('manualCallEmail');
-    const manualSmsEmail = document.getElementById('manualSmsEmail');
+    const manualCallNumber = document.getElementById('manualCallNumber');
+    const manualSmsNumber = document.getElementById('manualSmsNumber');
     const manualSmsBody = document.getElementById('manualSmsBody');
 
-    // 环境判断
+    // 环境判断 [来自图片6]
     const ua = navigator.userAgent || '';
     const isAndroid = /Android|Adr/i.test(ua);
     const isIOS = /\(i[^;]+;( U;)? CPU.+Mac OS X/.test(ua);
     const isWeChat = /MicroMessenger/i.test(ua);
     const isUC = /UCBrowser/i.test(ua);
 
-    // 渲染文本
+    // 渲染基础文本 [来自图片6-7]
     plateEl.textContent = PLATE;
-    manualCallEmail.textContent = CUSTOM_EMAIL;
-    manualSmsEmail.textContent = CUSTOM_EMAIL;
+    manualCallNumber.textContent = PHONE;
+    manualSmsNumber.textContent = PHONE;
     manualSmsBody.textContent = SMS_BODY;
 
-    // 构造跳转链接（后台号码）
-    const telHref = `tel:${REAL_PHONE}`;
+    // 构造链接 [来自图片7]
+    const telHref = `tel:${PHONE}`;
     const smsParamJoin = isIOS ? '&' : '?';
-    const smsHref = `sms:${REAL_PHONE}${smsParamJoin}body=${encodeURIComponent(SMS_BODY)}`;
+    const smsHref = `sms:${PHONE}${smsParamJoin}body=${encodeURIComponent(SMS_BODY)}`;
 
+    // 绑定初始 href [来自图片7]
     callBtn.setAttribute('href', telHref);
     smsBtn.setAttribute('href', smsHref);
 
-    // 自动尝试逻辑
+    // 自动尝试逻辑 [来自图片7-8]
     const params = new URLSearchParams(location.search);
     const auto = (params.get('auto') || '').toLowerCase();
 
     function tryOpen(href, type) {
         if (isWeChat) {
-            tipsEl.textContent = '您在微信内打开，请点击下方按钮完成操作。';
+            tipsEl.textContent = '您在微信内打开，可能无法自动跳转，请点击按钮完成操作。';
             return;
         }
+        // iOS/多数浏览器自动跳转轻尝试
         setTimeout(() => { window.location.href = href; }, 300);
-        if (type === 'call') retryCallBtn.classList.remove('hidden');
-        if (type === 'sms') retrySmsBtn.classList.remove('hidden');
+        
+        if (type === 'call') {
+            retryCallBtn.classList.remove('hidden');
+        } else if (type === 'sms') {
+            retrySmsBtn.classList.remove('hidden');
+        }
     }
 
+    // 初始化自动尝试 [来自图片8]
     document.addEventListener('DOMContentLoaded', function() {
-        if (auto === 'call') tryOpen(telHref, 'call');
-        else if (auto === 'sms') tryOpen(smsHref, 'sms');
-        else if (isAndroid && !isWeChat) retryCallBtn.classList.remove('hidden');
+        if (auto === 'call') {
+            tipsEl.textContent = '正在尝试打开电话...如未弹出，请点击“立即拨打电话”。';
+            tryOpen(telHref, 'call');
+        } else if (auto === 'sms') {
+            tipsEl.textContent = '正在尝试打开短信...如未弹出，请点击“立即发送短信”。';
+            tryOpen(smsHref, 'sms');
+        } else {
+            if (isAndroid && !isWeChat) {
+                tipsEl.textContent = '如未弹出拨号界面，请点击“立即拨打电话”。';
+                retryCallBtn.classList.remove('hidden');
+            }
+        }
     }, { once: true });
 
-    // 事件绑定
+    // 重试按钮逻辑 [来自图片9]
+    retryCallBtn.addEventListener('click', () => { window.location.href = telHref; });
+    retrySmsBtn.addEventListener('click', () => { window.location.href = smsHref; });
+
+    // 手动说明显隐逻辑 [来自图片9]
     const show = (el) => el.classList.remove('hidden');
     const hide = (el) => el.classList.add('hidden');
 
@@ -231,13 +250,15 @@
     showManualSms.addEventListener('click', () => { hide(manualCallBox); show(manualSmsBox); });
     backFromCall.addEventListener('click', () => { hide(manualCallBox); });
     backFromSms.addEventListener('click', () => { hide(manualSmsBox); });
-    
-    retryCallBtn.addEventListener('click', () => { window.location.href = telHref; });
-    retrySmsBtn.addEventListener('click', () => { window.location.href = smsHref; });
+
+    // 主按钮点击处理 [来自图片9]
     callBtn.addEventListener('click', () => { retryCallBtn.classList.remove('hidden'); });
     smsBtn.addEventListener('click', () => { retrySmsBtn.classList.remove('hidden'); });
 
-    if (isUC) tipsEl.textContent = '建议使用系统浏览器以获得最佳体验。';
+    // UC 浏览器特殊提示 [来自图片9]
+    if (isUC) {
+        tipsEl.textContent = 'UC 浏览器可能拦截自动跳转，请直接点击上方按钮。';
+    }
 })();
 </script>
 
