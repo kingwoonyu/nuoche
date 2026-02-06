@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>源码猫挪车系统</title>
+    <style>
+        :root {
+            --primary-blue: #4a86e8;
+            --text-gray: #666;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft YaHei", sans-serif;
+            background: url('./static/bg.jpg') no-repeat center bottom;
+            background-size: cover;
+            background-attachment: fixed;
+            background-color: #fce4ec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            width: 95%;
+            max-width: 1000px;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { font-size: 28px; margin: 0 0 10px 0; }
+        .subtitle { color: var(--text-gray); font-size: 16px; margin-bottom: 15px; }
+        
+        .plate-number {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* 步骤样式 */
+        .step-item { margin-bottom: 20px; line-height: 1.8; }
+        .step-title { font-weight: bold; }
+        .completed { color: #888; }
+
+        /* 按钮样式 */
+        .btn-group { display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 20px 0; }
+        .main-btns { display: flex; justify-content: center; gap: 20px; }
+        
+        .btn { padding: 10px 25px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 16px; border: none; display: inline-flex; align-items: center; }
+        .btn-blue { background-color: var(--primary-blue); color: white; }
+        .btn-outline { background-color: white; color: var(--primary-blue); border: 1px solid var(--primary-blue); }
+        
+        .retry-btn { font-size: 14px; color: #ff5722; text-decoration: underline; cursor: pointer; background: none; border: none; }
+
+        /* 底部说明按钮 */
+        .footer-tips { text-align: center; font-size: 14px; color: var(--text-gray); margin-top: 40px; }
+        .manual-btns { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .btn-mini { border: 1px solid #ccc; padding: 8px 20px; border-radius: 8px; background: white; color: #333; text-decoration: none; cursor: pointer; }
+
+        /* 弹窗样式 */
+        .modal {
+            position: absolute;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            padding: 20px;
+            z-index: 100;
+            border: 1px solid #eee;
+        }
+
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .modal-content-box { border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; font-size: 14px; line-height: 2.2; margin-bottom: 20px; }
+        .modal-row { border-bottom: 1px solid #f5f5f5; word-break: break-all; }
+        .modal-row:last-child { border-bottom: none; }
+        
+        .btn-back { display: block; width: 100px; margin: 0 auto; border: 1px solid var(--primary-blue); color: var(--primary-blue); background: white; padding: 8px; border-radius: 6px; text-align: center; cursor: pointer; }
+
+        .hidden { display: none !important; }
+        #tips { color: #f44336; margin-bottom: 10px; min-height: 1.2em; text-align: center; }
+    </style>
+</head>
+<body>
+
+<main class="container">
+    <header>
+        <h1>源码猫挪车系统</h1>
+        <p class="subtitle">临时停靠，请多关照</p>
+        <div id="plate" class="plate-number">加载中...</div>
+    </header>
+
+    <div class="step-section">
+        <div class="step-item"><span class="completed">第一步：手机扫描二维码（已完成）</span></div>
+        
+        <div class="step-item">
+            <div class="step-title">第二步：选择联系方式</div>
+            <div id="tips"></div>
+
+            <div class="btn-group">
+                <div class="main-btns">
+                    <a id="callBtn" class="btn btn-blue">立即拨打电话</a>
+                    <a id="smsBtn" class="btn btn-outline">立即发送短信</a>
+                </div>
+                <button id="retryCallBtn" class="retry-btn hidden">未弹出拨号盘？点此重试</button>
+                <button id="retrySmsBtn" class="retry-btn hidden">未弹出短信界面？点此重试</button>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-title">第三步：联络成功</div>
+            <p style="color: #666;">非常抱歉，请耐心等待，车主正在速速赶往。</p>
+        </div>
+    </div>
+
+    <div class="footer-tips">
+        <p>如果没有自动跳转，请点击上面的按钮，为了隐藏号码，改为发送邮箱形式。</p>
+        <div class="manual-btns">
+            <button id="showManualCall" class="btn-mini">手动拨号说明</button>
+            <button id="showManualSms" class="btn-mini">手动短信说明</button>
+        </div>
+    </div>
+
+    <div id="manualCall" class="modal hidden">
+        <div class="modal-title">手动拨号说明</div>
+        <div class="modal-content-box">
+            <div class="modal-row">1) 记录车主隐私联系方式：<strong id="manualCallEmail"></strong></div>
+            <div class="modal-row">2) 如需紧急通话，请点击上方蓝色按钮由系统中转。</div>
+        </div>
+        <button id="backFromCall" class="btn-back">返回</button>
+    </div>
+
+    <div id="manualSms" class="modal hidden">
+        <div class="modal-title">手动发送短信说明</div>
+        <div class="modal-content-box">
+            <div class="modal-row">编辑内容：<strong id="manualSmsBody"></strong></div>
+            <div class="modal-row">发送邮箱：<strong id="manualSmsEmail"></strong></div>
+        </div>
+        <button id="backFromSms" class="btn-back">返回</button>
+    </div>
+</main>
+
+<script>
+(function() {
+    // ===== 可配置项 =====
+    const REAL_PHONE = '19327401607'; // 实际拨号用的号码
+    const CUSTOM_EMAIL = 'xxx@qq.com';  // 用于显示的隐私邮箱
+    const PLATE = '鲁A00001';           // 车牌号
+    const SMS_BODY = '来......挪个车-';  // 短信内容
+
+    // ===== DOM 获取 =====
+    const plateEl = document.getElementById('plate');
+    const tipsEl = document.getElementById('tips');
+    const callBtn = document.getElementById('callBtn');
+    const smsBtn = document.getElementById('smsBtn');
+    const retryCallBtn = document.getElementById('retryCallBtn');
+    const retrySmsBtn = document.getElementById('retrySmsBtn');
+    const showManualCall = document.getElementById('showManualCall');
+    const showManualSms = document.getElementById('showManualSms');
+    const manualCallBox = document.getElementById('manualCall');
+    const manualSmsBox = document.getElementById('manualSms');
+    const backFromCall = document.getElementById('backFromCall');
+    const backFromSms = document.getElementById('backFromSms');
+    
+    // 隐私邮箱显示位置
+    const manualCallEmail = document.getElementById('manualCallEmail');
+    const manualSmsEmail = document.getElementById('manualSmsEmail');
+    const manualSmsBody = document.getElementById('manualSmsBody');
+
+    // 环境判断
+    const ua = navigator.userAgent || '';
+    const isAndroid = /Android|Adr/i.test(ua);
+    const isIOS = /\(i[^;]+;( U;)? CPU.+Mac OS X/.test(ua);
+    const isWeChat = /MicroMessenger/i.test(ua);
+    const isUC = /UCBrowser/i.test(ua);
+
+    // 渲染文本
+    plateEl.textContent = PLATE;
+    manualCallEmail.textContent = CUSTOM_EMAIL;
+    manualSmsEmail.textContent = CUSTOM_EMAIL;
+    manualSmsBody.textContent = SMS_BODY;
+
+    // 构造跳转链接（后台号码）
+    const telHref = `tel:${REAL_PHONE}`;
+    const smsParamJoin = isIOS ? '&' : '?';
+    const smsHref = `sms:${REAL_PHONE}${smsParamJoin}body=${encodeURIComponent(SMS_BODY)}`;
+
+    callBtn.setAttribute('href', telHref);
+    smsBtn.setAttribute('href', smsHref);
+
+    // 自动尝试逻辑
+    const params = new URLSearchParams(location.search);
+    const auto = (params.get('auto') || '').toLowerCase();
+
+    function tryOpen(href, type) {
+        if (isWeChat) {
+            tipsEl.textContent = '您在微信内打开，请点击下方按钮完成操作。';
+            return;
+        }
+        setTimeout(() => { window.location.href = href; }, 300);
+        if (type === 'call') retryCallBtn.classList.remove('hidden');
+        if (type === 'sms') retrySmsBtn.classList.remove('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (auto === 'call') tryOpen(telHref, 'call');
+        else if (auto === 'sms') tryOpen(smsHref, 'sms');
+        else if (isAndroid && !isWeChat) retryCallBtn.classList.remove('hidden');
+    }, { once: true });
+
+    // 事件绑定
+    const show = (el) => el.classList.remove('hidden');
+    const hide = (el) => el.classList.add('hidden');
+
+    showManualCall.addEventListener('click', () => { hide(manualSmsBox); show(manualCallBox); });
+    showManualSms.addEventListener('click', () => { hide(manualCallBox); show(manualSmsBox); });
+    backFromCall.addEventListener('click', () => { hide(manualCallBox); });
+    backFromSms.addEventListener('click', () => { hide(manualSmsBox); });
+    
+    retryCallBtn.addEventListener('click', () => { window.location.href = telHref; });
+    retrySmsBtn.addEventListener('click', () => { window.location.href = smsHref; });
+    callBtn.addEventListener('click', () => { retryCallBtn.classList.remove('hidden'); });
+    smsBtn.addEventListener('click', () => { retrySmsBtn.classList.remove('hidden'); });
+
+    if (isUC) tipsEl.textContent = '建议使用系统浏览器以获得最佳体验。';
+})();
+</script>
+
+</body>
+</html>
