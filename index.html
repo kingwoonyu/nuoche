@@ -26,12 +26,25 @@
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.85);
-            width: 90%;
+            /* 1. 半透明背景：建议使用白色，透明度在 0.6 - 0.8 之间 */
+            background: rgba(255, 255, 255, 0.6); 
+    
+            /* 2. 毛玻璃核心：让背后的背景图模糊 */
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px); /* 兼容 Safari / iOS */
+    
+            /* 3. 增加质感：加上一个细微的白色半透边框，模拟玻璃边缘 */
+            border: 1px solid rgba(255, 255, 255, 0.4); 
+    
+            /* 4. 阴影：使用更柔和的阴影，增加悬浮感 */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); 
+
+            /* 原有布局属性保持不变 */
+            width: 95%;
             max-width: 1000px;
             border-radius: 12px;
             padding: 40px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
             position: relative;
         }
 
@@ -264,5 +277,6 @@
 
 </body>
 </html>
+
 
 
